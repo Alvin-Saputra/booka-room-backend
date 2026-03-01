@@ -1,4 +1,5 @@
 import pool from "../config/db.js";
+import bcrypt from "bcryptjs";
 
 export const getUsers = async (req, res) => {
     try {
@@ -48,6 +49,7 @@ export const getUserById = async (req, res) => {
 };
 
 export const createUser = async (req, res) => {
+    const saltRounds = 10;
     const { userCode, userName, email, password, role } = req.body;
 
     if (!userCode || !userName || !email || !password || !role) {
@@ -58,7 +60,9 @@ export const createUser = async (req, res) => {
     }
 
     try {
-        const [result] = await pool.query('INSERT INTO users (user_code, user_name, email, password, role) VALUES (?, ?, ?, ?, ?)', [userCode, userName, email, password, role]);
+       const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+        const [result] = await pool.query('INSERT INTO users (user_code, user_name, email, password, role) VALUES (?, ?, ?, ?, ?)', [userCode, userName, email, hashedPassword, role]);
 
         if (result.affectedRows > 0) {
             return res.status(201).json({
@@ -70,6 +74,12 @@ export const createUser = async (req, res) => {
                     email,
                     role
                 }
+            });
+        }
+        else {
+            return res.status(500).json({
+                status: 'error',
+                message: 'Failed to create user'
             });
         }
     }

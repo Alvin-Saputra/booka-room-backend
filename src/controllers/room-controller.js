@@ -83,6 +83,13 @@ export const createRoom = async (req, res) => {
                 }
             });
         }
+
+         else{
+            return res.status(500).json({
+                status: 'error',
+                message: 'Failed to create room'
+            });
+        }
     }
     catch (err) {
         console.error(err);

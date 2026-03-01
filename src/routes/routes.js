@@ -11,6 +11,12 @@ import { getRoomById } from '../controllers/room-controller.js';
 import { deleteRoom } from '../controllers/room-controller.js';
 import { updateRoom } from '../controllers/room-controller.js';
 
+import { createBookings, deleteBooking } from '../controllers/booking-controller.js';
+import { getBookings } from '../controllers/booking-controller.js';
+import { getBookingById } from '../controllers/booking-controller.js';
+
+import { login } from '../controllers/auth-controller.js';
+
 const router = express.Router();
 
 router.get('/', (req, res) => {
@@ -29,5 +35,12 @@ router.get('/rooms/:id', getRoomById);
 router.post('/rooms', createRoom);
 router.delete('/rooms/:id', deleteRoom);
 router.put('/rooms/:id', updateRoom);
+
+router.post('/bookings', createBookings);
+router.get('/bookings', getBookings);
+router.get('/bookings/:id', getBookingById)
+router.delete('/bookings/:id', deleteBooking);
+
+router.post('/login', login);
 
 export default router;

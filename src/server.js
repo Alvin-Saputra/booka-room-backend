@@ -1,5 +1,6 @@
 import express from 'express';
 import router from './routes/routes.js';
+import cors from 'cors';
 
 const app = express();
 const port = 3000;
@@ -18,7 +19,9 @@ app.use((req, res, next) => {
     }
     next();
 });
-
+app.use(cors({
+    origin: '*'
+}));
 app.use(express.json());
 app.use('/', router);
 
