@@ -50,9 +50,9 @@ export const getUserById = async (req, res) => {
 
 export const createUser = async (req, res) => {
     const saltRounds = 10;
-    const { userCode, userName, email, password, role } = req.body;
+    const { userName, email, role } = req.body;
 
-    if (!userCode || !userName || !email || !password || !role) {
+    if (!userName || !email || !role) {
         return res.status(400).json({
             status: 'error',
             message: 'Missing required fields'
@@ -60,7 +60,17 @@ export const createUser = async (req, res) => {
     }
 
     try {
-       const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+        const password = "password123";
+
+        const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+        const [rows] = await pool.query('SELECT id FROM users ORDER BY id DESC LIMIT 1');
+        // console.log(
+        //     latestId
+        // );
+
+        const userCode = "USER-" + (rows[0].id + 1);
 
         const [result] = await pool.query('INSERT INTO users (user_code, user_name, email, password, role) VALUES (?, ?, ?, ?, ?)', [userCode, userName, email, hashedPassword, role]);
 
@@ -119,10 +129,10 @@ export const deleteUser = async (req, res) => {
 
 
 export const updateUser = async (req, res) => {
-    const { userCode, userName, email, password, role } = req.body;
+    const {  userName, email, role } = req.body;
     const { id } = req.params;
 
-    if (!userCode || !userName || !email || !password || !role) {
+    if (!userName || !email || !role) {
         return res.status(400).json({
             status: 'error',
             message: 'Missing required fields'
@@ -131,8 +141,8 @@ export const updateUser = async (req, res) => {
 
     try {
         const [result] = await pool.query(
-            'UPDATE users SET user_code = ?, user_name = ?, email = ?, password = ?, role = ? WHERE id = ?',
-            [userCode, userName, email, password, role, id]
+            'UPDATE users SET user_name = ?, email = ?, role = ? WHERE id = ?',
+            [userName, email, role, id]
         );
 
         if (result.affectedRows > 0) {
@@ -140,8 +150,6 @@ export const updateUser = async (req, res) => {
                 status: 'success',
                 message: 'User updated successfully',
                 data: {
-                    id,
-                    userCode,
                     userName,
                     email,
                     role
