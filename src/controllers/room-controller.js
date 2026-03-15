@@ -46,14 +46,8 @@ export const getRoomById = async (req, res) => {
 };
 
 export const createRoom = async (req, res) => {
-    const { roomCode, roomName, capacity } = req.body;
+    const {roomName, capacity } = req.body;
 
-    if (!roomCode || !roomName || !capacity) {
-        return res.status(400).json({
-            status: 'error',
-            message: 'Missing required fields'
-        });
-    }
 
     if (capacity <= 0) {
         return res.status(400).json({
@@ -70,14 +64,17 @@ export const createRoom = async (req, res) => {
     }
 
     try {
+         const [rows] = await pool.query('SELECT id FROM rooms ORDER BY id DESC LIMIT 1');
+        const roomCode = "ROOM-" + (rows[0].id + 1);
+
         const [result] = await pool.query('INSERT INTO rooms (room_code, room_name, capacity) VALUES (?, ?, ?)', [roomCode, roomName, capacity]);
+       
 
         if (result.affectedRows > 0) {
             return res.status(201).json({
-                status: 'success',
+                status: 'success', 
                 data: {
                     id: result.insertId,
-                    roomCode,
                     roomName,
                     capacity
                 }
@@ -127,10 +124,10 @@ export const deleteRoom = async (req, res) => {
 
 
 export const updateRoom = async (req, res) => {
-    const { roomCode, roomName, capacity } = req.body;
+    const { roomName, capacity } = req.body;
     const { id } = req.params;
 
-    if (!roomCode || !roomName || !capacity) {
+    if (!roomName || !capacity) {
         return res.status(400).json({
             status: 'error',
             message: 'Missing required fields'
@@ -153,8 +150,8 @@ export const updateRoom = async (req, res) => {
 
     try {
         const [result] = await pool.query(
-            'UPDATE rooms SET room_code = ?, room_name = ?, capacity = ? WHERE id = ?',
-            [roomCode, roomName, capacity, id]
+            'UPDATE rooms SET room_name = ?, capacity = ? WHERE id = ?',
+            [roomName, capacity, id]
         );
 
         if (result.affectedRows > 0) {
@@ -163,7 +160,6 @@ export const updateRoom = async (req, res) => {
                 message: 'Room updated successfully',
                 data: {
                     id,
-                    roomCode,
                     roomName,
                     capacity
                 }
