@@ -10,6 +10,7 @@ import { createRoom } from '../controllers/room-controller.js';
 import { getRoomById } from '../controllers/room-controller.js';
 import { deleteRoom } from '../controllers/room-controller.js';
 import { updateRoom } from '../controllers/room-controller.js';
+import { approveBooking } from '../controllers/booking-controller.js';
 
 import { createBookings, deleteBooking } from '../controllers/booking-controller.js';
 import { getBookings } from '../controllers/booking-controller.js';
@@ -40,6 +41,7 @@ router.post('/bookings', createBookings);
 router.get('/bookings', getBookings);
 router.get('/bookings/:id', getBookingById)
 router.delete('/bookings/:id', deleteBooking);
+router.put('/bookings/approval/:id', approveBooking);
 
 router.post('/login', login);
 
