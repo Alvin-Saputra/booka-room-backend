@@ -1,95 +1,119 @@
 # Booka Room - Backend API 🏢
 
-Repositori ini berisi *source code* untuk **Backend API** dari aplikasi **Booka Room** (Sistem Manajemen Ruang Rapat). Proyek portofolio ini dibangun menggunakan Node.js dan Express.js untuk menyediakan RESTful API yang cepat dan efisien, serta dirancang untuk terintegrasi secara mulus dengan aplikasi *frontend* berbasis Vue.js.
+This repository contains the *source code* for the **Backend API** of the **Booka Room** application (Meeting Room Management System). This portfolio project is built using Node.js and Express.js to provide a fast and efficient RESTful API, and is designed to integrate seamlessly with a Vue.js-based *frontend* application.
 
-Sistem ini mendukung pengelolaan *user*, pengelolaan ruang rapat, hingga alur pemesanan (booking) dan *approval* ruangan, lengkap dengan sistem autentikasi dan otorisasi berbasis *Role* (Admin & User).
-
-## 🚀 Teknologi yang Digunakan
-
-- **Runtime:** Node.js
-- **Framework:** Express.js (v5.2.1)
-- **Database:** MySQL (dengan `mysql2` & *Connection Pool*)
-- **Autentikasi:** JSON Web Token (JWT) & `bcryptjs` untuk enkripsi *password*
-- **Utilitas Lainnya:** `cors`, `dotenv` (Environment Variables), `nodemailer` (Notifikasi Email)
-
-## ⚙️ Prasyarat (Prerequisites)
-
-Sebelum menjalankan aplikasi ini, pastikan Anda telah menginstal:
-- [Node.js](https://nodejs.org/) (Versi 18 atau terbaru direkomendasikan)
-- [MySQL Server](https://www.mysql.com/)
-
-## 🛠️ Cara Instalasi & Menjalankan Aplikasi Lokal
-
-1. **Clone repository ini:**
-   ```bash
-   git clone [https://github.com/username-anda/booka-room-backend.git](https://github.com/username-anda/booka-room-backend.git)
-   cd booka-room-backend
-
-2. **Install Depedency:**
-   ```bash
-   npm install
-   
-3. **Atur Environment Variables:**
-   ```bash
-   # Konfigurasi Database
-   DB_HOST=localhost
-   DB_USER=root
-   DB_PASSWORD=password_database_anda
-   DB_NAME=nama_database_bookaroom
-   DB_PORT=3306
-   
-   # Konfigurasi JWT
-   JWT_SECRET=rahasia_jwt_super_aman_anda
-   
-3. **Jalankan Server Development:**
-   ```bash
-   npm start
-
-## 📌 Daftar Endpoint API Utama
-
-Berikut adalah rangkuman struktur *route* REST API yang tersedia. Setiap *route* (kecuali `/login` dan *root*) mewajibkan penyertaan JWT Token pada *header* `Authorization: Bearer <token>`.
-
-### 🔑 Autentikasi
-- `POST /login` : Endpoint untuk *login* dan mendapatkan JWT Token.
-
-### 👥 Users Management
-- `GET /users` : Melihat semua pengguna (Admin).
-- `GET /users/:id` : Melihat detail pengguna tertentu (Admin, User).
-- `POST /users` : Menambahkan pengguna baru (Admin).
-- `PUT /users/:id` : Memperbarui data pengguna (Admin).
-- `DELETE /users/:id` : Menghapus pengguna (Admin).
-
-### 🚪 Rooms Management
-- `GET /rooms` : Melihat daftar ruang rapat yang tersedia (All Authenticated Users).
-- `GET /rooms/:id` : Melihat detail spesifik satu ruangan (All Authenticated Users).
-- `POST /rooms` : Menambahkan ruang rapat baru (Admin).
-- `PUT /rooms/:id` : Memperbarui data ruang rapat, seperti kapasitas dan nama (Admin).
-- `DELETE /rooms/:id` : Menghapus ruang rapat (Admin).
-
-### 📅 Bookings & Approval
-- `GET /bookings` : Melihat daftar semua pemesanan ruangan.
-- `GET /bookings/:id` : Melihat detail spesifik dari satu pemesanan.
-- `GET /bookings/user/:id` : Melihat riwayat pemesanan berdasarkan ID User (Admin, User).
-- `POST /bookings` : Membuat pemesanan ruangan baru (Admin, User).
-- `PUT /bookings/approval/:id` : Menyetujui/menolak (*Approve/Reject*) status pemesanan (Admin).
-- `DELETE /bookings/:id` : Membatalkan/menghapus riwayat pemesanan (Admin).
+This system supports *user* management, meeting room management, as well as booking and room *approval* workflows, complete with authentication and role-based authorization (Admin & User).
 
 ---
 
-## 📂 Struktur Folder (Project Structure)
+## 🚀 Technologies Used
+
+* **Runtime:** Node.js
+* **Framework:** Express.js (v5.2.1)
+* **Database:** MySQL (with `mysql2` & *Connection Pool*)
+* **Authentication:** JSON Web Token (JWT) & `bcryptjs` for *password* encryption
+* **Other Utilities:** `cors`, `dotenv` (Environment Variables), `nodemailer` (Email Notifications)
+
+---
+
+## ⚙️ Prerequisites
+
+Before running this application, make sure you have installed:
+
+* [Node.js](https://nodejs.org/) (Version 18 or later is recommended)
+* [MySQL Server](https://www.mysql.com/)
+
+---
+
+## 🛠️ Installation & Running the Application Locally
+
+1. **Clone this repository:**
+
+   ```bash
+   git clone https://github.com/username-anda/booka-room-backend.git
+   cd booka-room-backend
+   ```
+
+2. **Install dependencies:**
+
+   ```bash
+   npm install
+   ```
+
+3. **Set up Environment Variables:**
+
+   ```bash
+   # Database Configuration
+   DB_HOST=localhost
+   DB_USER=root
+   DB_PASSWORD=your_database_password
+   DB_NAME=bookaroom_database_name
+   DB_PORT=3306
+
+   # JWT Configuration
+   JWT_SECRET=your_super_secure_jwt_secret
+   ```
+
+4. **Run the Development Server:**
+
+   ```bash
+   npm start
+   ```
+
+---
+
+## 📌 Main API Endpoints
+
+Below is a summary of the available REST API routes. Each route (except `/login` and root) requires a JWT Token in the `Authorization` header:
+
+```
+Authorization: Bearer <token>
+```
+
+### 🔑 Authentication
+
+* `POST /login` → Log in and obtain a JWT Token.
+
+### 👥 Users Management
+
+* `GET /users` → Retrieve all users (Admin)
+* `GET /users/:id` → Retrieve details of a specific user (Admin, User)
+* `POST /users` → Create a new user (Admin)
+* `PUT /users/:id` → Update user data (Admin)
+* `DELETE /users/:id` → Delete a user (Admin)
+
+### 🚪 Rooms Management
+
+* `GET /rooms` → Retrieve all available meeting rooms (All Authenticated Users)
+* `GET /rooms/:id` → Retrieve details of a specific room (All Authenticated Users)
+* `POST /rooms` → Create a new meeting room (Admin)
+* `PUT /rooms/:id` → Update room data (Admin)
+* `DELETE /rooms/:id` → Delete a meeting room (Admin)
+
+### 📅 Bookings & Approval
+
+* `GET /bookings` → Retrieve all booking records
+* `GET /bookings/:id` → Retrieve details of a specific booking
+* `GET /bookings/user/:id` → Retrieve booking history by User ID (Admin, User)
+* `POST /bookings` → Create a new booking (Admin, User)
+* `PUT /bookings/approval/:id` → Approve or reject a booking (Admin)
+* `DELETE /bookings/:id` → Cancel/delete a booking (Admin)
+
+---
+
+## 📂 Project Structure
 
 ```text
 booka-room-backend/
 ├── src/
-│   ├── config/        # Konfigurasi Database (Koneksi MySQL)
-│   ├── controllers/   # Logika bisnis/Controller API (Auth, User, Room, Booking)
-│   ├── middlewares/   # Middleware (Validasi JWT & Otorisasi Role)
-│   ├── routes/        # Definisi Endpoint API
-│   ├── utils/         # Fungsi Utilitas tambahan (seperti Send Email SMTP)
-│   └── server.js      # Titik masuk utama (Entry point) konfigurasi Express app
-├── .env.example       # Contoh file env
-├── .gitignore         # File yang diabaikan oleh Git
-├── package.json       # Manifes NPM dan daftar dependensi
-└── README.md          # Dokumentasi Proyek
-
-
+│   ├── config/        # Database configuration (MySQL connection)
+│   ├── controllers/   # Business logic / API controllers (Auth, User, Room, Booking)
+│   ├── middlewares/   # Middleware (JWT validation & role authorization)
+│   ├── routes/        # API endpoint definitions
+│   ├── utils/         # Utility functions (e.g., SMTP email sender)
+│   └── server.js      # Main entry point (Express app configuration)
+├── .env.example       # Example environment file
+├── .gitignore         # Git ignored files
+├── package.json       # NPM dependencies and scripts
+└── README.md          # Project documentation
+```
