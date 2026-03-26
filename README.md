@@ -28,3 +28,23 @@ Sebelum menjalankan aplikasi ini, pastikan Anda telah menginstal:
 2. **Install Depedency:**
    ```bash
    npm install
+   
+3. **Atur Environment Variables:**
+   ```bash
+   # Konfigurasi Database
+   DB_HOST=localhost
+   DB_USER=root
+   DB_PASSWORD=password_database_anda
+   DB_NAME=nama_database_bookaroom
+   DB_PORT=3306
+   
+   # Konfigurasi JWT
+   JWT_SECRET=rahasia_jwt_super_aman_anda
+   
+3. **Jalankan Server Development:**
+   ```bash
+   npm start
+
+
+
+
