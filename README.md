@@ -117,3 +117,7 @@ booka-room-backend/
 ├── package.json       # NPM dependencies and scripts
 └── README.md          # Project documentation
 ```
+
+## 📝 Database Schema
+<img width="493" height="425" alt="booka-room" src="https://github.com/user-attachments/assets/2bc7d444-3ecc-41f6-99b3-0bbace9e5b81" />
+
