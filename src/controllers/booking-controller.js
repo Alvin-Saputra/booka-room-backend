@@ -23,6 +23,15 @@ export const createBookings = async (req, res) => {
         // Format the date to MySQL DATETIME format: YYYY-MM-DD HH:MM:SS based on local time
         const bookedAt = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
 
+        const [rows] = await pool.query('SELECT * FROM bookings WHERE start_time <= ? AND end_time >= ?', [endTime, startTime]);
+
+        if (rows.length > 0) {
+            return res.status(400).json({
+                status: 'error',
+                message: 'Room is already booked for the selected time period'
+            });
+        }
+
         const [result] = await pool.query(
             'INSERT INTO bookings (id_user, id_room, start_time, end_time, purpose, status, booked_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
             [userId, roomId, startTime, endTime, purpose, roomStatus, bookedAt]
@@ -223,4 +232,36 @@ export const approveBooking = async (req, res) => {
         });
     }
 
+
+
 }
+
+export const getBookingStats = async (req, res) => {
+    try {
+        const [rows] = await pool.query('SELECT status, COUNT(*) AS count FROM bookings GROUP BY status');
+
+        let statusCount = {
+            pending: 0,
+            approved: 0,
+            rejected: 0
+        };
+
+        for (const item of rows) {
+            if (item.status === 'Pending') statusCount.pending = item.count;
+            if (item.status === 'Approved') statusCount.approved = item.count;
+            if (item.status === 'Rejected') statusCount.rejected = item.count;
+        }
+        return res.status(200).json({
+            status: 'success',
+            data: {
+                status_count: statusCount
+            }
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({
+            status: 'error',
+            message: 'Database error'
+        });
+    }
+};

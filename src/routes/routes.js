@@ -16,6 +16,7 @@ import { createBookings, deleteBooking } from '../controllers/booking-controller
 import { getBookings } from '../controllers/booking-controller.js';
 import { getBookingById } from '../controllers/booking-controller.js';
 import { getBookingsByUserId } from '../controllers/booking-controller.js';
+import { getBookingStats } from '../controllers/booking-controller.js';
 
 import { login } from '../controllers/auth-controller.js';
 import { verifyToken, authorizeRoles } from '../middlewares/auth-middlware.js';
@@ -41,10 +42,12 @@ router.put('/rooms/:id', verifyToken, authorizeRoles('admin'), updateRoom);
 
 router.post('/bookings', verifyToken, authorizeRoles('admin', 'user'), createBookings);
 router.get('/bookings', getBookings);
+router.get('/bookings/stats', verifyToken, authorizeRoles('admin'), getBookingStats);
 router.get('/bookings/:id', getBookingById)
 router.delete('/bookings/:id', verifyToken, authorizeRoles('admin'), deleteBooking);
 router.put('/bookings/approval/:id', verifyToken, authorizeRoles('admin'), approveBooking);
 router.get('/bookings/user/:id', verifyToken, authorizeRoles('admin', 'user'), getBookingsByUserId);
+
 
 router.post('/login', login);
 
