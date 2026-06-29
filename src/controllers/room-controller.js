@@ -1,4 +1,5 @@
 import pool from "../config/db.js";
+import { uploadToCloudinary, deleteImageByUrl } from "../middlewares/upload-middleware.js";
 
 export const getRooms = async (req, res) => {
   try {
@@ -42,7 +43,12 @@ export const getRoomById = async (req, res) => {
 };
 
 export const createRoom = async (req, res) => {
-  const { roomName, capacity, description, facilities, imageUrl } = req.body;
+    try {
+  const { roomName, description, facilities} = req.body;
+  
+  const capacity = parseInt(req.body.capacity);
+
+  let imageUrl = null;
 
   if (capacity <= 0) {
     return res.status(400).json({
@@ -58,7 +64,24 @@ export const createRoom = async (req, res) => {
     });
   }
 
-  try {
+  if (req.file) {
+      
+      const cloudinaryResult = await uploadToCloudinary(req.file.buffer);
+      imageUrl = cloudinaryResult.secure_url; 
+    }
+
+    let parsedFacilities = facilities;
+    if (typeof facilities === 'string') {
+      try {
+        parsedFacilities = JSON.parse(facilities);
+      } catch (e) {
+        parsedFacilities = [facilities]; 
+      }
+    }
+
+  
+
+
     const [rows] = await pool.query(
       "SELECT id FROM rooms ORDER BY id DESC LIMIT 1",
     );
@@ -66,7 +89,7 @@ export const createRoom = async (req, res) => {
 
     const [result] = await pool.query(
       "INSERT INTO rooms (room_code, room_name, capacity, description, facilities, image_url) VALUES (?, ?, ?, ?, ?, ?)",
-      [roomCode, roomName, capacity, description, JSON.stringify(facilities), imageUrl],
+      [roomCode, roomName, capacity, description, JSON.stringify(parsedFacilities), imageUrl],
     ); // Convert facilities array to JSON string
 
     if (result.affectedRows > 0) {
@@ -90,7 +113,7 @@ export const createRoom = async (req, res) => {
     console.error(err);
     res.status(500).json({
       status: "error",
-      message: "Database error",
+      message: err.message,
     });
   }
 };
@@ -116,10 +139,14 @@ export const deleteRoom = async (req, res) => {
 };
 
 export const updateRoom = async (req, res) => {
-  const { roomName, capacity, facilities, description, imageUrl } = req.body;
+    try {
+  const { roomName, facilities, description } = req.body;
   const { id } = req.params;
 
-  if (!roomName || !capacity || !facilities || !description) {
+  const capacity = parseInt(req.body.capacity);
+
+
+   if (!roomName || !capacity || !facilities || !description|| !id ) {
     return res.status(400).json({
       status: "error",
       message: "Missing required fields",
@@ -140,10 +167,43 @@ export const updateRoom = async (req, res) => {
     });
   }
 
-  try {
+  let parsedFacilities = facilities;
+    if (typeof facilities === 'string') {
+      try {
+        parsedFacilities = JSON.parse(facilities);
+      } catch (e) {
+        parsedFacilities = [facilities]; 
+      }
+    }
+
+  const oldRoomResult = await pool.query("SELECT * FROM rooms WHERE id = ?", [id]);
+  if (oldRoomResult[0].length === 0) {
+    return res.status(404).json({
+      status: "error",
+      message: "Room not found",
+    });
+  }
+
+  const oldImageUrl = oldRoomResult[0].image_url;
+  let finalImageUrl = oldImageUrl;
+
+  if (req.file) {
+     
+      const cloudinaryResult = await uploadToCloudinary(req.file.buffer);
+      finalImageUrl = cloudinaryResult.secure_url; 
+
+      // Lang
+      if (oldImageUrl) {
+        await deleteImageByUrl(oldImageUrl);
+      }
+    }
+
+ 
+
+
     const [result] = await pool.query(
       "UPDATE rooms SET room_name = ?, capacity = ?, description = ?, facilities = ?, image_url = ? WHERE id = ? ",
-      [roomName, capacity, description, JSON.stringify(facilities), imageUrl, id],
+      [roomName, capacity, description, JSON.stringify(parsedFacilities), finalImageUrl, id],
     );
 
     if (result.affectedRows > 0) {
@@ -156,7 +216,7 @@ export const updateRoom = async (req, res) => {
           capacity,
           description,
           facilities,
-          imageUrl,
+          finalImageUrl,
         },
       });
     } else {

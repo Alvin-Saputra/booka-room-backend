@@ -20,6 +20,7 @@ import { getBookingStats } from '../controllers/booking-controller.js';
 
 import { login } from '../controllers/auth-controller.js';
 import { verifyToken, authorizeRoles } from '../middlewares/auth-middlware.js';
+import { upload} from '../middlewares/upload-middleware.js';
 
 const router = express.Router();
 
@@ -36,9 +37,9 @@ router.put('/users/:id', verifyToken, authorizeRoles('admin'), updateUser);
 
 router.get('/rooms', verifyToken, getRooms);
 router.get('/rooms/:id', verifyToken, getRoomById);
-router.post('/rooms', verifyToken, authorizeRoles('admin'), createRoom);
+router.post('/rooms', verifyToken, authorizeRoles('admin'), upload.single('image'), createRoom);
 router.delete('/rooms/:id', verifyToken, authorizeRoles('admin'), deleteRoom);
-router.put('/rooms/:id', verifyToken, authorizeRoles('admin'), updateRoom);
+router.put('/rooms/:id', verifyToken, authorizeRoles('admin'), upload.single('image'), updateRoom);
 
 router.post('/bookings', verifyToken, authorizeRoles('admin', 'user'), createBookings);
 router.get('/bookings', getBookings);
