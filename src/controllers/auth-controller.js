@@ -21,6 +21,7 @@ export const login = async (req, res) => {
                 );
                 return res.status(200).json({
                     status: 'success',
+                    message: 'Successfully login',
                     data: {
                         id,
                         user_code,
@@ -34,14 +35,18 @@ export const login = async (req, res) => {
             else {
                 return res.status(401).json({
                     status: 'error',
-                    message: 'Invalide credentials'
+                    message: 'Invalid credentials',
+                    errorCode: 'ERR_INVALID_CREDENTIALS',
+                    data: null
                 });
             }
         }
         else {
             return res.status(401).json({
                 status: 'error',
-                message: 'Invalide credentials'
+                message: 'Invalid credentials',
+                errorCode: 'ERR_INVALID_CREDENTIALS',
+                data: null
             });
         }
     }
@@ -49,7 +54,9 @@ export const login = async (req, res) => {
         console.error(err);
         res.status(500).json({
             status: 'error',
-            message: 'Database error'
+            message: 'Database error',
+            errorCode: 'ERR_DATABASE',
+            data: null
         });
     }
 };

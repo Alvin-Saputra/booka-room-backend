@@ -7,7 +7,7 @@ export const verifyToken = (req, res, next) => {
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
         return res.status(401).json({
             status: 'error',
-            message: 'Akses ditolak. Token tidak ditemukan atau format salah.'
+            message: 'Access denied. Token not found or invalid format.'
         });
     }
 

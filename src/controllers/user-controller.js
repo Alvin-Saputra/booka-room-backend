@@ -6,13 +6,16 @@ export const getUsers = async (req, res) => {
         const [rows] = await pool.query('SELECT * FROM users');
         return res.status(200).json({
             status: 'success',
+            message: 'Users data retrieved successfully',
             data: rows
         });
     } catch (err) {
         console.error(err);
         res.status(500).json({
             status: 'error',
-            message: 'Database error'
+            message: 'Database error',
+            errorCode: 'ERR_DATABASE',
+            data: null
         });
     }
 };
@@ -28,13 +31,16 @@ export const getUserById = async (req, res) => {
 
             return res.status(200).json({
                 status: 'success',
+                message: 'User data retrieved successfully',
                 data: rows[0]
             });
         }
         else {
             return res.status(404).json({
                 status: 'error',
-                message: 'User not found'
+                message: 'User not found',
+                errorCode: 'ERR_NOT_FOUND',
+                data: null
             });
         }
 
@@ -43,7 +49,9 @@ export const getUserById = async (req, res) => {
         console.error(err);
         res.status(500).json({
             status: 'error',
-            message: 'Database error'
+            message: 'Database error',
+            errorCode: 'ERR_DATABASE',
+            data: null
         });
     }
 };
@@ -55,7 +63,9 @@ export const createUser = async (req, res) => {
     if (!userName || !email || !role) {
         return res.status(400).json({
             status: 'error',
-            message: 'Missing required fields'
+            message: 'Missing required fields',
+            errorCode: 'ERR_MISSING_FIELDS',
+            data: null,
         });
     }
 
@@ -77,6 +87,7 @@ export const createUser = async (req, res) => {
         if (result.affectedRows > 0) {
             return res.status(201).json({
                 status: 'success',
+                message: 'Successfully created a user',
                 data: {
                     id: result.insertId,
                     userCode,
@@ -89,7 +100,9 @@ export const createUser = async (req, res) => {
         else {
             return res.status(500).json({
                 status: 'error',
-                message: 'Failed to create user'
+                message: 'Failed to create user',
+                errorCode: 'ERR_CREATE_FAILED',
+                data: null
             });
         }
     }
@@ -97,7 +110,9 @@ export const createUser = async (req, res) => {
         console.error(err);
         res.status(500).json({
             status: 'error',
-            message: 'Database error'
+            message: 'Database error',
+            errorCode: 'ERR_DATABASE',
+            data: null
         });
     }
 
@@ -113,7 +128,8 @@ export const deleteUser = async (req, res) => {
         if (result.affectedRows > 0) {
             return res.status(200).json({
                 status: 'success',
-                message: 'User deleted successfully'
+                message: 'User deleted successfully',
+                data: null
             })
         }
     }
@@ -121,7 +137,9 @@ export const deleteUser = async (req, res) => {
         console.error(err);
         res.status(500).json({
             status: 'error',
-            message: 'Database error'
+            message: 'Database error',
+            errorCode: 'ERR_DATABASE',
+            data: null
         });
     }
 
@@ -129,13 +147,15 @@ export const deleteUser = async (req, res) => {
 
 
 export const updateUser = async (req, res) => {
-    const {  userName, email, role } = req.body;
+    const { userName, email, role } = req.body;
     const { id } = req.params;
 
     if (!userName || !email || !role) {
         return res.status(400).json({
             status: 'error',
-            message: 'Missing required fields'
+            message: 'Missing required fields',
+            errorCode: 'ERR_MISSING_FIELDS',
+            data: null
         });
     }
 
@@ -158,14 +178,18 @@ export const updateUser = async (req, res) => {
         } else {
             return res.status(404).json({
                 status: 'error',
-                message: 'User not found'
+                message: 'User not found',
+                errorCode: 'ERR_NOT_FOUND',
+                data: null
             });
         }
     } catch (err) {
         console.error(err);
         res.status(500).json({
             status: 'error',
-            message: 'Database error'
+            message: 'Database error',
+            errorCode: 'ERR_DATABASE',
+            data: null
         });
     }
 };

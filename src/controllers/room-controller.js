@@ -7,12 +7,15 @@ export const getRooms = async (req, res) => {
     return res.status(200).json({
       status: "success",
       data: rows,
+      message: 'Rooms retrieved successfully',
     });
   } catch (err) {
     console.error(err);
     res.status(500).json({
       status: "error",
       message: "Database error",
+      errorCode: 'ERR_DATABASE',
+      data: null
     });
   }
 };
@@ -26,11 +29,14 @@ export const getRoomById = async (req, res) => {
       return res.status(200).json({
         status: "success",
         data: rows[0],
+        message: 'Room retrieved successfully',
       });
     } else {
       return res.status(404).json({
         status: "error",
         message: "Room not found",
+        errorCode: 'ERR_ROOM_NOT_FOUND',
+        data: null
       });
     }
   } catch (err) {
@@ -38,36 +44,42 @@ export const getRoomById = async (req, res) => {
     res.status(500).json({
       status: "error",
       message: "Database error",
+      errorCode: 'ERR_DATABASE',
+      data: null
     });
   }
 };
 
 export const createRoom = async (req, res) => {
-    try {
-  const { roomName, description, facilities} = req.body;
-  
-  const capacity = parseInt(req.body.capacity);
+  try {
+    const { roomName, description, facilities } = req.body;
 
-  let imageUrl = null;
+    const capacity = parseInt(req.body.capacity);
 
-  if (capacity <= 0) {
-    return res.status(400).json({
-      status: "error",
-      message: "Capacity must be greater than 0",
-    });
-  }
+    let imageUrl = null;
 
-  if (typeof capacity !== "number") {
-    return res.status(400).json({
-      status: "error",
-      message: "Capacity must be a number",
-    });
-  }
+    if (capacity <= 0) {
+      return res.status(400).json({
+        status: "error",
+        message: "Capacity must be greater than 0",
+        errorCode: 'ERR_INVALID_INPUT',
+        data: null
+      });
+    }
 
-  if (req.file) {
-      
+    if (typeof capacity !== "number") {
+      return res.status(400).json({
+        status: "error",
+        message: "Capacity must be a number",
+        errorCode: 'ERR_INVALID_INPUT',
+        data: null
+      });
+    }
+
+    if (req.file) {
+
       const cloudinaryResult = await uploadToCloudinary(req.file.buffer);
-      imageUrl = cloudinaryResult.secure_url; 
+      imageUrl = cloudinaryResult.secure_url;
     }
 
     let parsedFacilities = facilities;
@@ -75,11 +87,11 @@ export const createRoom = async (req, res) => {
       try {
         parsedFacilities = JSON.parse(facilities);
       } catch (e) {
-        parsedFacilities = [facilities]; 
+        parsedFacilities = [facilities];
       }
     }
 
-  
+
 
 
     const [rows] = await pool.query(
@@ -95,6 +107,7 @@ export const createRoom = async (req, res) => {
     if (result.affectedRows > 0) {
       return res.status(201).json({
         status: "success",
+        message: 'Room created successfully',
         data: {
           id: result.insertId,
           roomName,
@@ -107,6 +120,7 @@ export const createRoom = async (req, res) => {
       return res.status(500).json({
         status: "error",
         message: "Failed to create room",
+        errorCode: 'ERR_CREATE_FAILED'
       });
     }
   } catch (err) {
@@ -114,6 +128,8 @@ export const createRoom = async (req, res) => {
     res.status(500).json({
       status: "error",
       message: err.message,
+      errorCode: 'ERR_DATABASE',
+      data: null
     });
   }
 };
@@ -127,6 +143,15 @@ export const deleteRoom = async (req, res) => {
       return res.status(200).json({
         status: "success",
         message: "Room deleted successfully",
+        data: null
+      });
+    }
+    else {
+      return res.status(404).json({
+        status: 'error',
+        message: 'Room not found to delete',
+        errorCode: 'ERR_ROOM_NOT_FOUND',
+        data: null
       });
     }
   } catch (err) {
@@ -134,63 +159,73 @@ export const deleteRoom = async (req, res) => {
     res.status(500).json({
       status: "error",
       message: "Database error",
+      errorCode: 'ERR_DATABASE',
+      data: null
     });
   }
 };
 
 export const updateRoom = async (req, res) => {
-    try {
-  const { roomName, facilities, description } = req.body;
-  const { id } = req.params;
+  try {
+    const { roomName, facilities, description } = req.body;
+    const { id } = req.params;
 
-  const capacity = parseInt(req.body.capacity);
+    const capacity = parseInt(req.body.capacity);
 
 
-   if (!roomName || !capacity || !facilities || !description|| !id ) {
-    return res.status(400).json({
-      status: "error",
-      message: "Missing required fields",
-    });
-  }
+    if (!roomName || !capacity || !facilities || !description || !id) {
+      return res.status(400).json({
+        status: "error",
+        message: "Missing required fields",
+        errorCode: 'ERR_MISSING_FIELDS',
+        data: null
+      });
+    }
 
-  if (capacity <= 0) {
-    return res.status(400).json({
-      status: "error",
-      message: "Capacity must be greater than 0",
-    });
-  }
+    if (capacity <= 0) {
+      return res.status(400).json({
+        status: "error",
+        message: "Capacity must be greater than 0",
+        errorCode: 'ERR_INVALID_INPUT',
+        data: null
+      });
+    }
 
-  if (typeof capacity !== "number") {
-    return res.status(400).json({
-      status: "error",
-      message: "Capacity must be a number",
-    });
-  }
+    if (typeof capacity !== "number") {
+      return res.status(400).json({
+        status: "error",
+        message: "Capacity must be a number",
+        errorCode: 'ERR_INVALID_INPUT',
+        data: null
+      });
+    }
 
-  let parsedFacilities = facilities;
+    let parsedFacilities = facilities;
     if (typeof facilities === 'string') {
       try {
         parsedFacilities = JSON.parse(facilities);
       } catch (e) {
-        parsedFacilities = [facilities]; 
+        parsedFacilities = [facilities];
       }
     }
 
-  const oldRoomResult = await pool.query("SELECT * FROM rooms WHERE id = ?", [id]);
-  if (oldRoomResult[0].length === 0) {
-    return res.status(404).json({
-      status: "error",
-      message: "Room not found",
-    });
-  }
+    const oldRoomResult = await pool.query("SELECT * FROM rooms WHERE id = ?", [id]);
+    if (oldRoomResult[0].length === 0) {
+      return res.status(404).json({
+        status: "error",
+        message: "Room not found",
+        errorCode: 'ERR_ROOM_NOT_FOUND',
+        data: null
+      });
+    }
 
-  const oldImageUrl = oldRoomResult[0].image_url;
-  let finalImageUrl = oldImageUrl;
+    const oldImageUrl = oldRoomResult[0].image_url;
+    let finalImageUrl = oldImageUrl;
 
-  if (req.file) {
-     
+    if (req.file) {
+
       const cloudinaryResult = await uploadToCloudinary(req.file.buffer);
-      finalImageUrl = cloudinaryResult.secure_url; 
+      finalImageUrl = cloudinaryResult.secure_url;
 
       // Lang
       if (oldImageUrl) {
@@ -198,7 +233,7 @@ export const updateRoom = async (req, res) => {
       }
     }
 
- 
+
 
 
     const [result] = await pool.query(
@@ -223,13 +258,17 @@ export const updateRoom = async (req, res) => {
       return res.status(404).json({
         status: "error",
         message: "Room not found",
+        errorCode: 'ERR_ROOM_NOT_FOUND',
+        data: null
       });
     }
   } catch (err) {
     console.error(err);
     res.status(500).json({
       status: "error",
-      message: "Database error: " + err.message,
+      message: "Database error",
+      errorCode: 'ERR_DATABASE',
+      data: null
     });
   }
 };
