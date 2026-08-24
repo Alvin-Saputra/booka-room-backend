@@ -58,6 +58,15 @@ export const createRoom = async (req, res) => {
 
     let imageUrl = null;
 
+    if (!roomName|| !description || !facilities) {
+        return res.status(400).json({
+            status: 'error',
+            message: 'Missing required fields',
+            errorCode: 'ERR_MISSING_FIELDS',
+            data: null,
+        });
+    }
+
     if (capacity <= 0) {
       return res.status(400).json({
         status: "error",
@@ -219,7 +228,7 @@ export const updateRoom = async (req, res) => {
       });
     }
 
-    const oldImageUrl = oldRoomResult[0].image_url;
+    const oldImageUrl = oldRoomResult[0][0].image_url;
     let finalImageUrl = oldImageUrl;
 
     if (req.file) {
