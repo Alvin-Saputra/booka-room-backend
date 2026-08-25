@@ -5,7 +5,12 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "start": "nodemon ./src/server.js"
+    "start": "nodemon ./src/server.js",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "node ./src/database/migrate.js",
+    "db:seed": "node ./src/database/seed.js",
+    "db:reset": "node ./src/database/reset.js",
+    "db:refresh": "npm run db:reset && npm run db:migrate && npm run db:seed"
   },
   "keywords": [],
   "author": "",
@@ -15,11 +20,15 @@
     "cloudinary": "^2.10.0",
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",
+    "drizzle-orm": "^0.45.2",
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
     "multer": "^2.1.1",
     "mysql2": "^3.18.2",
     "nodemailer": "^8.0.1",
     "nodemon": "^3.1.14"
+  },
+  "devDependencies": {
+    "drizzle-kit": "^0.31.10"
   }
 }
