@@ -1,4 +1,8 @@
 import pool from "../config/db.js";
+import { eq, desc, and, lte, gte } from "drizzle-orm";
+import { orm } from "../database/orm.js";
+import { bookings, users, rooms } from "../database/schema.js";
+import { count } from "drizzle-orm";
 
 
 export const createBookings = async (req, res) => {
@@ -25,9 +29,16 @@ export const createBookings = async (req, res) => {
         // Format the date to MySQL DATETIME format: YYYY-MM-DD HH:MM:SS based on local time
         const bookedAt = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
 
-        const [rows] = await pool.query('SELECT * FROM bookings WHERE start_time <= ? AND end_time >= ?', [endTime, startTime]);
+        // Cek apakah ruangan sudah dibooking pada jam tersebut
+        const existingBookings = await orm.select().from(bookings).where(
+            and(
+                eq(bookings.id_room, roomId), // <-- Saya tambahkan pengecekan id_room agar tidak mengecek kamar lain
+                lte(bookings.start_time, new Date(endTime)),
+                gte(bookings.end_time, new Date(startTime))
+            )
+        );
 
-        if (rows.length > 0) {
+        if (existingBookings.length > 0) {
             return res.status(400).json({
                 status: 'error',
                 message: 'Room is already booked for the selected time period',
@@ -36,10 +47,16 @@ export const createBookings = async (req, res) => {
             });
         }
 
-        const [result] = await pool.query(
-            'INSERT INTO bookings (id_user, id_room, start_time, end_time, purpose, status, booked_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
-            [userId, roomId, startTime, endTime, purpose, roomStatus, bookedAt]
-        );
+
+        const [result] = await orm.insert(bookings).values({
+            id_user: userId,
+            id_room: roomId,
+            start_time: new Date(startTime),
+            end_time: new Date(endTime),
+            purpose: purpose,
+            status: roomStatus,
+            booked_at: now // <-- Kita bisa langsung memasukkan objek Date
+        })
 
         if (result.affectedRows > 0) {
             return res.status(201).json({
@@ -82,44 +99,24 @@ export const createBookings = async (req, res) => {
 
 export const getBookings = async (req, res) => {
     try {
-        const [rows] = await pool.query(`SELECT 
-                bookings.id AS booking_id,
-                users.user_name,
-                rooms.room_name,
-                bookings.start_time,
-                bookings.end_time,
-                bookings.purpose,
-                bookings.status,
-                bookings.booked_at
-            FROM bookings
-            JOIN users ON bookings.id_user = users.id
-            JOIN rooms ON bookings.id_room = rooms.id`);
-        const data = [];
-        for (const item of rows) {
-            data.push({
-                id: item.booking_id,
-                user_name: item.user_name,
-                room_name: item.room_name,
-                start_time: item.start_time,
-                end_time: item.end_time,
-                purpose: item.purpose,
-                status: item.status,
-                booked_at: item.booked_at
-            });
-        }
+        const result = await orm.select().from(bookings)
+        .innerJoin(users, eq(bookings.id_user, users.id))
+        .innerJoin(rooms, eq(bookings.id_room, rooms.id));
+
 
         return res.status(200).json({
             status: 'success',
             message: "Booking data retreived successfully",
-            data: data
+            data: result
         });
+
     } catch (err) {
         console.error(err);
         res.status(500).json({
             status: 'error',
             message: 'Database error',
             errorCode: 'ERR_DATABASE',
-            data:null
+            data: null
         });
     }
 };
@@ -129,14 +126,14 @@ export const getBookingById = async (req, res) => {
     const { id } = req.params;
 
     try {
-        const [rows] = await pool.query('SELECT * FROM bookings WHERE id = ?', [id]);
+        const [specificBooking] = await orm.select().from(bookings).where(eq(bookings.id, id));
 
-        if (rows.length > 0) {
+        if (specificBooking) {
 
             return res.status(200).json({
                 status: 'success',
                 message: "Booking data retreived successfully",
-                data: rows[0]
+                data: specificBooking
             });
         }
         else {
@@ -164,38 +161,16 @@ export const getBookingsByUserId = async (req, res) => {
     const { id } = req.params;
 
     try {
-        const [rows] = await pool.query(`SELECT 
-                bookings.id AS booking_id,
-                users.user_name,
-                rooms.room_name,
-                bookings.start_time,
-                bookings.end_time,
-                bookings.purpose,
-                bookings.status,
-                bookings.booked_at
-            FROM bookings
-            JOIN users ON bookings.id_user = users.id
-            JOIN rooms ON bookings.id_room = rooms.id WHERE users.id = ?`, [id]);
+        const result = await orm.select().from(bookings)
+        .innerJoin(users, eq(bookings.id_user, users.id))
+        .innerJoin(rooms, eq(bookings.id_room, rooms.id)).where((eq(users.id, id)));
 
-        const data = [];
-
-        for (const item of rows) {
-            data.push({
-                id: item.booking_id,
-                user_name: item.user_name,
-                room_name: item.room_name,
-                start_time: item.start_time,
-                end_time: item.end_time,
-                purpose: item.purpose,
-                status: item.status,
-                booked_at: item.booked_at
-            });
-        }
+     
 
         return res.status(200).json({
             status: 'success',
             message: "Booking data retreived successfully",
-            data: data
+            data: result
         });
     } catch (err) {
         console.error(err);
@@ -203,7 +178,7 @@ export const getBookingsByUserId = async (req, res) => {
             status: 'error',
             message: 'Database error',
             errorCode: 'ERR_DATABASE',
-            data:null
+            data: null
         });
     }
 }
@@ -213,12 +188,12 @@ export const deleteBooking = async (req, res) => {
     const { id } = req.params;
 
     try {
-        const [result] = await pool.query('DELETE FROM bookings WHERE id = ?', [id]);
+        const [result] = await orm.delete(bookings).where(eq(bookings.id, id));
         if (result.affectedRows > 0) {
             return res.status(200).json({
                 status: 'success',
                 message: 'Booking deleted successfully',
-                data:null
+                data: null
             })
         }
     }
@@ -239,13 +214,15 @@ export const approveBooking = async (req, res) => {
     const { status } = req.body;
 
     try {
-        const [result] = await pool.query('UPDATE bookings SET status = ? WHERE id = ?', [status, id]);
+        const [result] = await orm.update(bookings).set({               
+                status: status
+            }).where(eq(bookings.id, id));
 
         if (result.affectedRows > 0) {
             return res.status(200).json({
                 status: 'success',
                 message: 'Booking ' + status + ' successfully',
-                data:null
+                data: null
             })
         }
     } catch (error) {
@@ -254,17 +231,20 @@ export const approveBooking = async (req, res) => {
             status: 'error',
             message: 'Database error',
             errorCode: 'ERR_DATABASE',
-            data:null
+            data: null
         });
     }
-
 
 
 }
 
 export const getBookingStats = async (req, res) => {
     try {
-        const [rows] = await pool.query('SELECT status, COUNT(*) AS count FROM bookings GROUP BY status');
+
+        const result = await orm.select({
+        status: bookings.status,    // Kolom yang dijadikan kriteria grouping
+        count: count()              // Hasil perhitungan / counting
+    }).from(bookings).groupBy(bookings.status);
 
         let statusCount = {
             pending: 0,
@@ -272,10 +252,10 @@ export const getBookingStats = async (req, res) => {
             rejected: 0
         };
 
-        for (const item of rows) {
-            if (item.status === 'Pending') statusCount.pending = item.count;
-            if (item.status === 'Approved') statusCount.approved = item.count;
-            if (item.status === 'Rejected') statusCount.rejected = item.count;
+        for (const item of result) {
+            if (item.status.toLowerCase() === 'pending') statusCount.pending = item.count;
+            if (item.status.toLowerCase() === 'approved') statusCount.approved = item.count;
+            if (item.status.toLowerCase() === 'rejected') statusCount.rejected = item.count;
         }
         return res.status(200).json({
             status: 'success',

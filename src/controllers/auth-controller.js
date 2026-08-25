@@ -1,12 +1,16 @@
 import pool from "../config/db.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import { eq } from "drizzle-orm";
+import { orm } from "../database/orm.js";
+import { users } from "../database/schema.js";
+import { desc } from "drizzle-orm";
 
 export const login = async (req, res) => {
     const { email, password } = req.body;
 
     try {
-        const [rows] = await pool.query('SELECT * FROM users WHERE email = ?', [email]);
+        const rows = await orm.select().from(users).where(eq(users.email, email));
 
         if (rows.length > 0) {
 

@@ -1,12 +1,16 @@
 import pool from "../config/db.js";
 import { uploadToCloudinary, deleteImageByUrl } from "../middlewares/upload-middleware.js";
+import { eq } from "drizzle-orm";
+import { orm } from "../database/orm.js";
+import { rooms } from "../database/schema.js";
+import { desc } from "drizzle-orm";
 
 export const getRooms = async (req, res) => {
   try {
-    const [rows] = await pool.query("SELECT * FROM rooms");
+    const allRooms = await orm.select().from(rooms);
     return res.status(200).json({
       status: "success",
-      data: rows,
+      data: allRooms,
       message: 'Rooms retrieved successfully',
     });
   } catch (err) {
@@ -24,11 +28,11 @@ export const getRoomById = async (req, res) => {
   const { id } = req.params;
 
   try {
-    const [rows] = await pool.query("SELECT * FROM rooms WHERE id = ?", [id]);
-    if (rows.length > 0) {
+    const specificRoom = await orm.select().from(rooms).where(eq(rooms.id, id));
+    if (specificRoom) {
       return res.status(200).json({
         status: "success",
-        data: rows[0],
+        data: specificRoom,
         message: 'Room retrieved successfully',
       });
     } else {
@@ -100,18 +104,17 @@ export const createRoom = async (req, res) => {
       }
     }
 
+    const [specificRoom] = await orm.select().from(rooms).orderBy(desc(rooms.id)).limit(1);
+    const roomCode = "ROOM-" + (specificRoom.id + 1);
 
-
-
-    const [rows] = await pool.query(
-      "SELECT id FROM rooms ORDER BY id DESC LIMIT 1",
-    );
-    const roomCode = "ROOM-" + (rows[0].id + 1);
-
-    const [result] = await pool.query(
-      "INSERT INTO rooms (room_code, room_name, capacity, description, facilities, image_url) VALUES (?, ?, ?, ?, ?, ?)",
-      [roomCode, roomName, capacity, description, JSON.stringify(parsedFacilities), imageUrl],
-    ); // Convert facilities array to JSON string
+    const [result] = await orm.insert(rooms).values({
+      room_code: roomCode,
+      room_name: roomName,
+      capacity: capacity,
+      description: description,
+      facilities: parsedFacilities,
+      image_url: imageUrl
+    })
 
     if (result.affectedRows > 0) {
       return res.status(201).json({
@@ -122,7 +125,7 @@ export const createRoom = async (req, res) => {
           roomName,
           capacity,
           description,
-          facilities,
+          parsedFacilities,
         },
       });
     } else {
@@ -147,7 +150,7 @@ export const deleteRoom = async (req, res) => {
   const { id } = req.params;
 
   try {
-    const [result] = await pool.query("DELETE FROM rooms WHERE id = ?", [id]);
+    const [result] = await orm.delete(rooms).where(eq(rooms.id, id));
     if (result.affectedRows > 0) {
       return res.status(200).json({
         status: "success",
@@ -218,8 +221,8 @@ export const updateRoom = async (req, res) => {
       }
     }
 
-    const oldRoomResult = await pool.query("SELECT * FROM rooms WHERE id = ?", [id]);
-    if (oldRoomResult[0].length === 0) {
+    const [oldRoomResult] =  await orm.select().from(rooms).where(eq(rooms.id, id));
+    if (!oldRoomResult) {
       return res.status(404).json({
         status: "error",
         message: "Room not found",
@@ -228,7 +231,7 @@ export const updateRoom = async (req, res) => {
       });
     }
 
-    const oldImageUrl = oldRoomResult[0][0].image_url;
+    const oldImageUrl = oldRoomResult.image_url;
     let finalImageUrl = oldImageUrl;
 
     if (req.file) {
@@ -242,13 +245,12 @@ export const updateRoom = async (req, res) => {
       }
     }
 
-
-
-
-    const [result] = await pool.query(
-      "UPDATE rooms SET room_name = ?, capacity = ?, description = ?, facilities = ?, image_url = ? WHERE id = ? ",
-      [roomName, capacity, description, JSON.stringify(parsedFacilities), finalImageUrl, id],
-    );
+      const [result] = await orm.update(rooms).set({
+                room_name: roomName,
+                capacity: capacity,
+                description: description,
+                facilities: parsedFacilities
+            }).where(eq(rooms.id, id));
 
     if (result.affectedRows > 0) {
       return res.status(200).json({
@@ -259,7 +261,7 @@ export const updateRoom = async (req, res) => {
           roomName,
           capacity,
           description,
-          facilities,
+          parsedFacilities,
           finalImageUrl,
         },
       });

@@ -1,13 +1,17 @@
 import pool from "../config/db.js";
 import bcrypt from "bcryptjs";
+import { eq } from "drizzle-orm";
+import { orm } from "../database/orm.js";
+import { users } from "../database/schema.js";
+import { desc } from "drizzle-orm";
 
 export const getUsers = async (req, res) => {
     try {
-        const [rows] = await pool.query('SELECT * FROM users');
+        const allUsers = await orm.select().from(users);
         return res.status(200).json({
             status: 'success',
             message: 'Users data retrieved successfully',
-            data: rows
+            data: allUsers
         });
     } catch (err) {
         console.error(err);
@@ -25,14 +29,15 @@ export const getUserById = async (req, res) => {
     const { id } = req.params;
 
     try {
-        const [rows] = await pool.query('SELECT * FROM users WHERE id = ?', [id]);
 
-        if (rows.length > 0) {
+        const[specificUser] = await orm.select().from(users).where(eq(users.id, id));
+
+        if (specificUser) {
 
             return res.status(200).json({
                 status: 'success',
                 message: 'User data retrieved successfully',
-                data: rows[0]
+                data: specificUser
             });
         }
         else {
@@ -58,9 +63,9 @@ export const getUserById = async (req, res) => {
 
 export const createUser = async (req, res) => {
     const saltRounds = 10;
-    const { userName, email, role } = req.body;
+    const { userName, email, role, password } = req.body;
 
-    if (!userName || !email || !role) {
+    if (!userName || !email || !role || !password) {
         return res.status(400).json({
             status: 'error',
             message: 'Missing required fields',
@@ -71,33 +76,31 @@ export const createUser = async (req, res) => {
 
     try {
 
-        const password = "password123";
-
         const hashedPassword = await bcrypt.hash(password, saltRounds);
+        const [specificUsers] = await orm.select().from(users).orderBy(desc(users.id)).limit(1);
+        const userCode = "USER-" + (specificUsers.id + 1);
 
-        const [rows] = await pool.query('SELECT id FROM users ORDER BY id DESC LIMIT 1');
-        // console.log(
-        //     latestId
-        // );
+        const [header] = await orm.insert(users).values({
+            user_code: userCode,
+            user_name: userName,
+            email: email,
+            password: hashedPassword,
+            role: role,
+        });
 
-        const userCode = "USER-" + (rows[0].id + 1);
-
-        const [result] = await pool.query('INSERT INTO users (user_code, user_name, email, password, role) VALUES (?, ?, ?, ?, ?)', [userCode, userName, email, hashedPassword, role]);
-
-        if (result.affectedRows > 0) {
+        if (header && header.affectedRows > 0) {
             return res.status(201).json({
                 status: 'success',
                 message: 'Successfully created a user',
                 data: {
-                    id: result.insertId,
+                    id: header.insertId,
                     userCode,
                     userName,
                     email,
                     role
                 }
             });
-        }
-        else {
+        } else {
             return res.status(500).json({
                 status: 'error',
                 message: 'Failed to create user',
@@ -124,7 +127,7 @@ export const deleteUser = async (req, res) => {
     const { id } = req.params;
 
     try {
-        const [result] = await pool.query('DELETE FROM users WHERE id = ?', [id]);
+        const [result] = await orm.delete(users).where(eq(users.id, id));
         if (result.affectedRows > 0) {
             return res.status(200).json({
                 status: 'success',
@@ -160,10 +163,12 @@ export const updateUser = async (req, res) => {
     }
 
     try {
-        const [result] = await pool.query(
-            'UPDATE users SET user_name = ?, email = ?, role = ? WHERE id = ?',
-            [userName, email, role, id]
-        );
+
+        const [result] = await orm.update(users).set({
+            user_name: userName,
+            email: email,
+            role: role,
+        }).where(eq(users.id, id));
 
         if (result.affectedRows > 0) {
             return res.status(200).json({
